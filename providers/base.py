@@ -28,7 +28,6 @@ class ProviderType(Enum):
     DIAL = "dial"
     GEMINI_CLI = "gemini_cli"
     CLAUDE_CLI = "claude_cli"
-    CLAUDE_CLI = "claude_cli"
 
 
 class TemperatureConstraint(ABC):
