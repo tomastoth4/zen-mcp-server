@@ -388,6 +388,7 @@ def configure_providers():
     from providers.custom import CustomProvider
     from providers.dial import DIALModelProvider
     from providers.gemini import GeminiModelProvider
+    from providers.gemini_cli import GeminiCLIProvider
     from providers.openai_provider import OpenAIModelProvider
     from providers.openrouter import OpenRouterProvider
     from providers.xai import XAIModelProvider
@@ -397,6 +398,7 @@ def configure_providers():
     has_native_apis = False
     has_openrouter = False
     has_custom = False
+    has_gemini_cli = False
 
     # Check for Gemini API key
     gemini_key = os.getenv("GEMINI_API_KEY")
@@ -445,6 +447,14 @@ def configure_providers():
         else:
             logger.debug("OpenRouter API key is placeholder value")
 
+    # Check for Gemini CLI (no API key needed)
+    import shutil
+    gemini_cli_path = shutil.which("gemini")
+    if gemini_cli_path:
+        valid_providers.append("Gemini CLI (no API key required)")
+        has_gemini_cli = True
+        logger.info(f"Gemini CLI found at: {gemini_cli_path} - Gemini models available without API key")
+    
     # Check for custom API endpoint (Ollama, vLLM, etc.)
     custom_url = os.getenv("CUSTOM_API_URL")
     if custom_url:
@@ -473,8 +483,12 @@ def configure_providers():
             ModelProviderRegistry.register_provider(ProviderType.XAI, XAIModelProvider)
         if dial_key and dial_key != "your_dial_api_key_here":
             ModelProviderRegistry.register_provider(ProviderType.DIAL, DIALModelProvider)
+    
+    # 2. Gemini CLI provider (no API key needed, but requires CLI installation)
+    if has_gemini_cli:
+        ModelProviderRegistry.register_provider(ProviderType.GEMINI_CLI, GeminiCLIProvider)
 
-    # 2. Custom provider second (for local/private models)
+    # 3. Custom provider third (for local/private models)
     if has_custom:
         # Factory function that creates CustomProvider with proper parameters
         def custom_provider_factory(api_key=None):
@@ -484,7 +498,7 @@ def configure_providers():
 
         ModelProviderRegistry.register_provider(ProviderType.CUSTOM, custom_provider_factory)
 
-    # 3. OpenRouter last (catch-all for everything else)
+    # 4. OpenRouter last (catch-all for everything else)
     if has_openrouter:
         ModelProviderRegistry.register_provider(ProviderType.OPENROUTER, OpenRouterProvider)
 
@@ -497,7 +511,8 @@ def configure_providers():
             "- XAI_API_KEY for X.AI GROK models\n"
             "- DIAL_API_KEY for DIAL models\n"
             "- OPENROUTER_API_KEY for OpenRouter (multiple models)\n"
-            "- CUSTOM_API_URL for local models (Ollama, vLLM, etc.)"
+            "- CUSTOM_API_URL for local models (Ollama, vLLM, etc.)\n"
+            "- Or install Gemini CLI: npm install -g @google/generative-ai-cli"
         )
 
     logger.info(f"Available providers: {', '.join(valid_providers)}")
@@ -506,6 +521,8 @@ def configure_providers():
     priority_info = []
     if has_native_apis:
         priority_info.append("Native APIs (Gemini, OpenAI)")
+    if has_gemini_cli:
+        priority_info.append("Gemini CLI")
     if has_custom:
         priority_info.append("Custom endpoints")
     if has_openrouter:

@@ -19,6 +19,7 @@ class ModelProviderRegistry:
     # Native APIs first, then custom endpoints, then catch-all providers
     PROVIDER_PRIORITY_ORDER = [
         ProviderType.GOOGLE,  # Direct Gemini access
+        ProviderType.GEMINI_CLI,  # Gemini CLI (no API key needed)
         ProviderType.OPENAI,  # Direct OpenAI access
         ProviderType.XAI,  # Direct X.AI GROK access
         ProviderType.DIAL,  # DIAL unified API access
@@ -93,6 +94,9 @@ class ModelProviderRegistry:
                 api_key = api_key or ""
                 # Initialize custom provider with both API key and base URL
                 provider = provider_class(api_key=api_key, base_url=custom_url)
+        elif provider_type == ProviderType.GEMINI_CLI:
+            # GEMINI_CLI doesn't need an API key
+            provider = provider_class(api_key="")
         else:
             if not api_key:
                 return None
@@ -236,6 +240,7 @@ class ModelProviderRegistry:
             ProviderType.OPENROUTER: "OPENROUTER_API_KEY",
             ProviderType.CUSTOM: "CUSTOM_API_KEY",  # Can be empty for providers that don't need auth
             ProviderType.DIAL: "DIAL_API_KEY",
+            ProviderType.GEMINI_CLI: None,  # No API key needed for CLI
         }
 
         env_var = key_mapping.get(provider_type)
